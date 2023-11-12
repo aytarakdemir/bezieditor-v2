@@ -32,7 +32,19 @@ export class Node {
     }
 
     // Render the node on the canvas as a point
-    draw(ctx: CanvasRenderingContext2D): void {
+    draw(ctx: CanvasRenderingContext2D, isSelected: boolean): void {
+
+        if (isSelected) {
+            ctx.beginPath();
+            ctx.moveTo(this.x - 10, this.y);
+            ctx.lineTo(this.x + 10, this.y);
+            ctx.moveTo(this.x, this.y - 10);
+            ctx.lineTo(this.x, this.y + 10);
+            ctx.strokeStyle = 'black';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+        }
+
         switch (this.type) {
             case NodeType.regular:
                 ctx.fillStyle = "yellow";

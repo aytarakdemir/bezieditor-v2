@@ -45,6 +45,8 @@ export class Scene {
         this.canvas.addEventListener('mouseup', this.onMouseUp.bind(this));
     }
 
+
+
     private onMouseDown(event: MouseEvent) {
         const mouseX = event.clientX;
         const mouseY = event.clientY;
@@ -156,11 +158,16 @@ export class Scene {
             );
     }
 
+    private isNodeSelected(node: Node): boolean {
+        return this.selectedNodes.has(node);
+    }
+
     public draw(): void {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
         for (const node of this.nodes) {
-            node.draw(this.ctx);
+            const isSelected = this.isNodeSelected(node);
+            node.draw(this.ctx, isSelected); 
         }
 
     }
