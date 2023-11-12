@@ -7,7 +7,7 @@ export enum NodeType {
 
 export class Node {
     public dragOffset = { x: 0, y: 0 };
-    constructor(private x: number, private y: number, private type: NodeType = NodeType.regular) {
+    constructor(private x: number, private y: number, private type: NodeType = NodeType.regular, private pivotX = 0, private pivotY = 0) {
     }
 
     // Move the node to a new position
@@ -26,20 +26,26 @@ export class Node {
 
     isPointInside(x: number, y: number): boolean {
         const radius = 5; // Assuming the node is drawn as a circle with radius 5
-        const dx = x - this.x;
-        const dy = y - this.y;
+        const dx = x - (this.pivotX + this.x);
+        const dy = y - (this.pivotY + this.y);
         return dx * dx + dy * dy <= radius * radius;
     }
 
+    setPivot(x: number, y: number) {
+        this.pivotX = x;
+        this.pivotY = y;
+    }
+
     // Render the node on the canvas as a point
-    draw(ctx: CanvasRenderingContext2D, isSelected: boolean): void {
+    draw(ctx: CanvasRenderingContext2D, isSelected: boolean, isEditing: boolean = true): void {
+        if (!isEditing) return;
 
         if (isSelected) {
             ctx.beginPath();
-            ctx.moveTo(this.x - 10, this.y);
-            ctx.lineTo(this.x + 10, this.y);
-            ctx.moveTo(this.x, this.y - 10);
-            ctx.lineTo(this.x, this.y + 10);
+            ctx.moveTo(this.pivotX + this.x - 10, this.pivotY + this.y);
+            ctx.lineTo(this.pivotX + this.x + 10, this.pivotY + this.y);
+            ctx.moveTo(this.pivotX + this.x, this.pivotY + this.y - 10);
+            ctx.lineTo(this.pivotX + this.x, this.pivotY + this.y + 10);
             ctx.strokeStyle = 'black';
             ctx.lineWidth = 1;
             ctx.stroke();
@@ -50,7 +56,7 @@ export class Node {
                 ctx.fillStyle = "yellow";
                 ctx.lineWidth = 1;
                 ctx.beginPath();
-                ctx.rect(this.x - 5, this.y - 5, 10, 10);
+                ctx.rect(this.pivotX + this.x - 5, this.pivotY + this.y - 5, 10, 10);
                 ctx.fill();
                 ctx.stroke();        
                 break;
@@ -58,7 +64,7 @@ export class Node {
                 ctx.lineWidth = 1;
                 ctx.fillStyle = "red";
                 ctx.beginPath();
-                ctx.ellipse(this.x, this.y, 5, 5, Math.PI / 4, 0, 2 * Math.PI);
+                ctx.ellipse(this.pivotX + this.x, this.pivotY + this.y, 5, 5, Math.PI / 4, 0, 2 * Math.PI);
                 ctx.fill();
                 ctx.stroke();        
                 break;
@@ -66,7 +72,7 @@ export class Node {
                 ctx.lineWidth = 1;
                 ctx.fillStyle = "blue";
                 ctx.beginPath();
-                ctx.ellipse(this.x , this.y , 5, 5, Math.PI / 4, 0, 2 * Math.PI);
+                ctx.ellipse(this.pivotX + this.x , this.pivotY + this.y , 5, 5, Math.PI / 4, 0, 2 * Math.PI);
                 ctx.fill();
                 ctx.stroke();        
                 break;

@@ -9,12 +9,12 @@ export class Scene {
     private pivotX: number = 0;
     private pivotY: number = 0;
 
-    private isEditing = false;
+    private isEditing = true;
 
     private nodes: Node[] = [
-        new Node(10, 10, NodeType.regular),
-        new Node(20, 10, NodeType.controlStart),
-        new Node(30, 10, NodeType.controlEnd)
+        new Node(10, 10, NodeType.regular, this.pivotX, this.pivotY),
+        new Node(20, 10, NodeType.controlStart, this.pivotX, this.pivotY),
+        new Node(30, 10, NodeType.controlEnd, this.pivotX, this.pivotY)
     ];
     private isDragging: boolean = false;
     private selectedNodes: Set<Node> = new Set();
@@ -76,8 +76,8 @@ export class Scene {
     
                     // Recalculate dragOffset for all selected nodes
                     this.selectedNodes.forEach(selectedNode => {
-                        selectedNode.dragOffset.x = mouseX - selectedNode.getCoords().x;
-                        selectedNode.dragOffset.y = mouseY - selectedNode.getCoords().y;
+                        selectedNode.dragOffset.x = mouseX - selectedNode.getCoords().x + this.pivotX;
+                        selectedNode.dragOffset.y = mouseY - selectedNode.getCoords().y + this.pivotY;
                     });
                 }
             }
@@ -107,7 +107,7 @@ export class Scene {
             const newX = mouseX - node.dragOffset.x;
             const newY = mouseY - node.dragOffset.y;
     
-            node.update(newX, newY);
+            node.update(newX + this.pivotX, newY + this.pivotY);
         });
     }
     
@@ -170,10 +170,6 @@ export class Scene {
                 }
                 previousType = node.getType(); 
 
-    
-                
-
-                console.log(output)
 
                 const formattedArrayString = '[' + output.map((subArray:any) => 
                     '\n[' + subArray.join(', ') + ']'
@@ -191,11 +187,11 @@ export class Scene {
         this.nodes = [];
         inputValue.forEach((curve: number[]) => {
             if (curve.length === 6) {
-                this.nodes.push(new Node(curve[0], curve[1], NodeType.controlStart));
-                this.nodes.push(new Node(curve[2], curve[3], NodeType.controlEnd));
-                this.nodes.push(new Node(curve[4], curve[5], NodeType.regular));
+                this.nodes.push(new Node(curve[0], curve[1], NodeType.controlStart, this.pivotX, this.pivotY));
+                this.nodes.push(new Node(curve[2], curve[3], NodeType.controlEnd, this.pivotX, this.pivotY));
+                this.nodes.push(new Node(curve[4], curve[5], NodeType.regular, this.pivotX, this.pivotY));
             } else if (curve.length === 2) {
-                this.nodes.push(new Node(curve[0], curve[1], NodeType.regular));
+                this.nodes.push(new Node(curve[0], curve[1], NodeType.regular, this.pivotX, this.pivotY));
             } else {
                 throw Error('Invalid number list length');
             }
@@ -219,21 +215,58 @@ export class Scene {
     public draw(): void {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
+
+
+
+        this.ctx.fillStyle = "#ffceb4";
+        this.ctx.lineWidth = 2;
+        this.ctx.strokeStyle = 'black';
+        this.ctx.beginPath();
+        this.ctx.moveTo(this.pivotX, this.pivotY);
+
+        let output:any = [];
+        let currentSet: any = [];
+        let previousType: NodeType = NodeType.regular 
+        this.nodes.forEach((node, index) => {
+            
+            if (previousType === NodeType.regular && node.getType() === NodeType.regular) {
+                currentSet.push(node.getCoords().x, node.getCoords().y);
+                this.ctx.moveTo(this.pivotX + node.getCoords().x, this.pivotY + node.getCoords().y);
+                output.push(currentSet);
+                currentSet = [];                   
+            } else {
+                currentSet.push([node.getCoords().x, node.getCoords().y]);
+                if (node.getType() === NodeType.regular) {
+                    this.ctx.bezierCurveTo(this.pivotX + currentSet[0][0], this.pivotY + currentSet[0][1], this.pivotX + currentSet[1][0], this.pivotY + currentSet[1][1], this.pivotX + currentSet[2][0], this.pivotY + currentSet[2][1]);
+                    output.push(currentSet);
+                    currentSet = [];                   
+                }
+            }
+            previousType = node.getType(); 
+
+        });
+
+        this.ctx.fill();
+        this.ctx.stroke();
+
+
+
         for (const node of this.nodes) {
             const isSelected = this.isNodeSelected(node);
-            node.draw(this.ctx, isSelected); 
+            node.draw(this.ctx, isSelected, this.isEditing); 
         }
-
     }
 
     public setPivot(x: number, y: number): void {
         this.pivotX = x;
         this.pivotY = y;
+        this.nodes.forEach((node: Node) => {
+            node.setPivot(this.pivotX, this.pivotY);
+        })
+
     }
 
-    public setCoordinates(coords: number[][]) {
-        console.log(coords);
-    }
+
 
 
     private animate(): void {
