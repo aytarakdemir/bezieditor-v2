@@ -1,9 +1,8 @@
 import '../styles.css';
 import {Scene} from './scene';
 
-const scene = new Scene();
+const scene = new Scene(300, 0);
 
-scene.setPivot(300,0);
 
 
 

@@ -6,16 +6,13 @@ export class Scene {
     private canvas: HTMLCanvasElement;
     private ctx;
 
-    private pivotX: number = 0;
-    private pivotY: number = 0;
+
 
     private isEditing = true;
 
 
     private nodes: Node[] = [
-        new Node(10, 10, NodeType.regular, this.pivotX, this.pivotY),
-        new Node(20, 10, NodeType.controlStart, this.pivotX, this.pivotY),
-        new Node(30, 10, NodeType.controlEnd, this.pivotX, this.pivotY)
+        new Node(0, 0, NodeType.pivot, 0, 0)
     ];
     private isDragging: boolean = false;
     private selectedNodes: Set<Node> = new Set();
@@ -25,7 +22,7 @@ export class Scene {
 
     private dragOffset: { x: number, y: number } = { x: 0, y: 0 };
 
-    constructor() {
+    constructor(private pivotX = 0, private pivotY = 0) {
         this.canvas = document.getElementById('canvas') as HTMLCanvasElement;
         this.resizeCanvas();
         window.addEventListener('resize', this.resizeCanvas);
@@ -77,8 +74,8 @@ export class Scene {
     
                     // Recalculate dragOffset for all selected nodes
                     this.selectedNodes.forEach(selectedNode => {
-                        selectedNode.dragOffset.x = mouseX - selectedNode.getCoords().x + this.pivotX;
-                        selectedNode.dragOffset.y = mouseY - selectedNode.getCoords().y + this.pivotY;
+                        selectedNode.dragOffset.x = mouseX - selectedNode.getCoords().x + this.nodes[0].getCoords().x;
+                        selectedNode.dragOffset.y = mouseY - selectedNode.getCoords().y + this.nodes[0].getCoords().y;
                     });
                 }
             }
@@ -108,7 +105,17 @@ export class Scene {
             const newX = mouseX - node.dragOffset.x;
             const newY = mouseY - node.dragOffset.y;
     
-            node.update(newX + this.pivotX, newY + this.pivotY);
+            if (node.getType() === NodeType.pivot) {
+                node.update(mouseX, mouseY);
+                this.nodes.forEach(element => {
+                    if (element.getType() !== NodeType.pivot) {
+                        element.setPivot(mouseX, mouseY);
+                    }
+                });
+
+            }
+            else
+                node.update(newX + this.nodes[0].getCoords().x, newY + this.nodes[0].getCoords().y);
         });
     }
     
@@ -193,11 +200,11 @@ export class Scene {
         this.nodes.push(new Node(this.pivotX, this.pivotY, NodeType.pivot, 0, 0));
         inputValue.forEach((curve: number[]) => {
             if (curve.length === 6) {
-                this.nodes.push(new Node(curve[0], curve[1], NodeType.controlStart, this.pivotX, this.pivotY));
-                this.nodes.push(new Node(curve[2], curve[3], NodeType.controlEnd, this.pivotX, this.pivotY));
-                this.nodes.push(new Node(curve[4], curve[5], NodeType.regular, this.pivotX, this.pivotY));
+                this.nodes.push(new Node(curve[0], curve[1], NodeType.controlStart, this.nodes[0].getCoords().x, this.nodes[0].getCoords().y));
+                this.nodes.push(new Node(curve[2], curve[3], NodeType.controlEnd, this.nodes[0].getCoords().x, this.nodes[0].getCoords().y));
+                this.nodes.push(new Node(curve[4], curve[5], NodeType.regular, this.nodes[0].getCoords().x, this.nodes[0].getCoords().y));
             } else if (curve.length === 2) {
-                this.nodes.push(new Node(curve[0], curve[1], NodeType.regular, this.pivotX, this.pivotY));
+                this.nodes.push(new Node(curve[0], curve[1], NodeType.regular, this.nodes[0].getCoords().x, this.nodes[0].getCoords().y));
             } else {
                 throw Error('Invalid number list length');
             }
@@ -228,7 +235,7 @@ export class Scene {
         this.ctx.lineWidth = 2;
         this.ctx.strokeStyle = 'black';
         this.ctx.beginPath();
-        this.ctx.moveTo(this.pivotX, this.pivotY);
+        this.ctx.moveTo(this.nodes[0].getCoords().x, this.nodes[0].getCoords().y);
 
         let output:any = [];
         let currentSet: any = [];
@@ -237,13 +244,13 @@ export class Scene {
             
             if ((previousType === NodeType.regular || previousType === NodeType.pivot) && node.getType() === NodeType.regular) {
                 currentSet.push(node.getCoords().x, node.getCoords().y);
-                this.ctx.moveTo(this.pivotX + node.getCoords().x, this.pivotY + node.getCoords().y);
+                this.ctx.moveTo(this.nodes[0].getCoords().x + node.getCoords().x, this.nodes[0].getCoords().y + node.getCoords().y);
                 output.push(currentSet);
                 currentSet = [];                   
             } else {
                 currentSet.push([node.getCoords().x, node.getCoords().y]);
                 if (node.getType() === NodeType.regular) {
-                    this.ctx.bezierCurveTo(this.pivotX + currentSet[0][0], this.pivotY + currentSet[0][1], this.pivotX + currentSet[1][0], this.pivotY + currentSet[1][1], this.pivotX + currentSet[2][0], this.pivotY + currentSet[2][1]);
+                    this.ctx.bezierCurveTo(this.nodes[0].getCoords().x + currentSet[0][0], this.nodes[0].getCoords().y + currentSet[0][1], this.nodes[0].getCoords().x + currentSet[1][0], this.nodes[0].getCoords().y + currentSet[1][1], this.nodes[0].getCoords().x + currentSet[2][0], this.nodes[0].getCoords().y + currentSet[2][1]);
                     output.push(currentSet);
                     currentSet = [];                   
                 }
@@ -263,14 +270,6 @@ export class Scene {
         }
     }
 
-    public setPivot(x: number, y: number): void {
-        this.pivotX = x;
-        this.pivotY = y;
-        this.nodes.forEach((node: Node) => {
-            if (node.getType() === NodeType.pivot) node.update(this.pivotX, this.pivotY);
-            else node.setPivot(this.pivotX, this.pivotY);
-        })
-    }
 
 
 
