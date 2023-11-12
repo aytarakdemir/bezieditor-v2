@@ -6,6 +6,7 @@ export enum NodeType {
 }
 
 export class Node {
+    public dragOffset = { x: 0, y: 0 };
     constructor(private x: number, private y: number, private type: NodeType = NodeType.regular) {
     }
 
@@ -21,6 +22,13 @@ export class Node {
 
     getType() : NodeType {
         return this.type;
+    }
+
+    isPointInside(x: number, y: number): boolean {
+        const radius = 5; // Assuming the node is drawn as a circle with radius 5
+        const dx = x - this.x;
+        const dy = y - this.y;
+        return dx * dx + dy * dy <= radius * radius;
     }
 
     // Render the node on the canvas as a point

@@ -11,6 +11,18 @@ export class Scene {
 
     private isEditing = false;
 
+    private nodes: Node[] = [
+        new Node(10, 10, NodeType.regular),
+        new Node(20, 10, NodeType.controlStart),
+        new Node(30, 10, NodeType.controlEnd)
+    ];
+    private isDragging: boolean = false;
+    private selectedNodes: Set<Node> = new Set();
+
+    private firstSelectedNode: Node | null = null;
+
+
+    private dragOffset: { x: number, y: number } = { x: 0, y: 0 };
 
     constructor() {
         this.canvas = document.getElementById('canvas') as HTMLCanvasElement;
@@ -19,11 +31,78 @@ export class Scene {
         this.ctx = (this.canvas as HTMLCanvasElement).getContext('2d')!;
         this.animate();
         this.initControlMenuEvents();
+        this.initMouseEvents();
     }
 
     private resizeCanvas = (): void => {
         this.canvas.width = window.innerWidth;
         this.canvas.height = window.innerHeight;
+    }
+
+    private initMouseEvents() {
+        this.canvas.addEventListener('mousedown', this.onMouseDown.bind(this));
+        this.canvas.addEventListener('mousemove', this.onMouseMove.bind(this));
+        this.canvas.addEventListener('mouseup', this.onMouseUp.bind(this));
+    }
+
+    private onMouseDown(event: MouseEvent) {
+        const mouseX = event.clientX;
+        const mouseY = event.clientY;
+        let nodeFound = false;
+        let lastClickedNode: Node | null = null;
+    
+        this.nodes.forEach(node => {
+            if (node.isPointInside(mouseX, mouseY)) {
+                nodeFound = true;
+                lastClickedNode = node;
+    
+                if (!event.shiftKey) {
+                    // If Shift is not pressed, start a new selection
+                    this.selectedNodes.clear();
+                }
+    
+                this.selectedNodes.add(node);
+            }
+        });
+    
+        if (nodeFound && lastClickedNode) {
+            // Recalculate dragOffset for all selected nodes based on the last clicked node
+            this.selectedNodes.forEach(node => {
+                node.dragOffset.x = mouseX - node.getCoords().x;
+                node.dragOffset.y = mouseY - node.getCoords().y;
+            });
+        }
+    
+        if (!nodeFound && !event.shiftKey) {
+            this.selectedNodes.clear();
+        }
+    
+        this.isDragging = nodeFound;
+    }
+                                    
+    private onMouseMove(event: MouseEvent) {
+        if (!this.isDragging) return;
+    
+        const mouseX = event.clientX;
+        const mouseY = event.clientY;
+    
+        this.selectedNodes.forEach(node => {
+            // Apply the drag offset to calculate the new position
+            const newX = mouseX - node.dragOffset.x;
+            const newY = mouseY - node.dragOffset.y;
+    
+            node.update(newX, newY);
+        });
+    }
+                        
+    private onMouseUp(event: MouseEvent) {
+        // Stop dragging
+        this.isDragging = false;
+
+        if (!event.shiftKey) {
+            // If Shift is not pressed, start a new selection
+            this.selectedNodes.clear();
+        }
     }
 
     private initControlMenuEvents() {
@@ -78,12 +157,12 @@ export class Scene {
     }
 
     public draw(): void {
-        const node1 = new Node(5, 10, NodeType.regular);
-        node1.draw(this.ctx);
-        const node2 = new Node(5, 10, NodeType.controlStart);
-        node2.draw(this.ctx);
-        const node3 = new Node(5, 10, NodeType.controlEnd);
-        node3.draw(this.ctx);
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+        for (const node of this.nodes) {
+            node.draw(this.ctx);
+        }
+
     }
 
     public setPivot(x: number, y: number): void {
