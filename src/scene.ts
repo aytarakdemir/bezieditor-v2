@@ -148,16 +148,58 @@ export class Scene {
                 console.error('Invalid JSON format:', error);
             }
         });
-        // outputButton.addEventListener('click', () => {
-        //     const formattedArrayString = '[' + this.bezierCoordinates.map(subArray => 
-        //         '\n[' + subArray.join(', ') + ']'
-        //     ).join(',') + '\n]';            
-        //     outputParagraph.textContent = formattedArrayString;
-        // });
+
+        outputButton.addEventListener('click', () => {
+            let output:any = [];
+            let currentSet: any = [];
+            let previousType: NodeType = NodeType.regular 
+            this.nodes.forEach((node, index) => {
+                
+                if (previousType === NodeType.regular && node.getType() === NodeType.regular) {
+                    currentSet.push(node.getCoords().x, node.getCoords().y);
+                    output.push(currentSet);
+                    currentSet = [];                   
+                } else {
+                    currentSet.push(node.getCoords().x, node.getCoords().y);
+
+                    if (node.getType() === NodeType.regular) {
+                        output.push(currentSet);
+                        currentSet = [];                   
+    
+                    }
+                }
+                previousType = node.getType(); 
+
+    
+                
+
+                console.log(output)
+
+                const formattedArrayString = '[' + output.map((subArray:any) => 
+                    '\n[' + subArray.join(', ') + ']'
+                ).join(',') + '\n]';  
+    
+                outputParagraph.textContent = formattedArrayString;
+            });
+ 
+        });
+
     }
 
     private processInput(inputValue: number[][]) {
         console.log('Validated input:', inputValue);
+        this.nodes = [];
+        inputValue.forEach((curve: number[]) => {
+            if (curve.length === 6) {
+                this.nodes.push(new Node(curve[0], curve[1], NodeType.controlStart));
+                this.nodes.push(new Node(curve[2], curve[3], NodeType.controlEnd));
+                this.nodes.push(new Node(curve[4], curve[5], NodeType.regular));
+            } else if (curve.length === 2) {
+                this.nodes.push(new Node(curve[0], curve[1], NodeType.regular));
+            } else {
+                throw Error('Invalid number list length');
+            }
+        })
 
         // this.bezierCoordinates=inputValue;
     }
