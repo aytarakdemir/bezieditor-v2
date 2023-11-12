@@ -51,36 +51,50 @@ export class Scene {
         const mouseX = event.clientX;
         const mouseY = event.clientY;
         let nodeFound = false;
-        let lastClickedNode: Node | null = null;
     
         this.nodes.forEach(node => {
             if (node.isPointInside(mouseX, mouseY)) {
                 nodeFound = true;
-                lastClickedNode = node;
     
-                if (!event.shiftKey) {
-                    // If Shift is not pressed, start a new selection
-                    this.selectedNodes.clear();
+                if (event.shiftKey) {
+                    // Toggle selection with Shift key
+                    if (this.selectedNodes.has(node)) {
+                        this.selectedNodes.delete(node); // Deselect if already selected
+                    } else {
+                        this.selectedNodes.add(node); // Select if not already selected
+                    }
+                    // Prevent dragging when Shift key is pressed
+                    this.isDragging = false;
+                } else {
+                    if (!this.selectedNodes.has(node)) {
+                        // Start a new selection if the clicked node is not already selected
+                        this.selectedNodes.clear();
+                        this.selectedNodes.add(node);
+                    }
+                    // Allow dragging when Shift key is not pressed
+                    this.isDragging = true;
+    
+                    // Recalculate dragOffset for all selected nodes
+                    this.selectedNodes.forEach(selectedNode => {
+                        selectedNode.dragOffset.x = mouseX - selectedNode.getCoords().x;
+                        selectedNode.dragOffset.y = mouseY - selectedNode.getCoords().y;
+                    });
                 }
-    
-                this.selectedNodes.add(node);
             }
         });
     
-        if (nodeFound && lastClickedNode) {
-            // Recalculate dragOffset for all selected nodes based on the last clicked node
-            this.selectedNodes.forEach(node => {
-                node.dragOffset.x = mouseX - node.getCoords().x;
-                node.dragOffset.y = mouseY - node.getCoords().y;
-            });
+        if (!nodeFound) {
+            // If no node is found and Shift is not pressed, clear the selection
+            if (!event.shiftKey) {
+                this.selectedNodes.clear();
+            }
+            this.isDragging = false;
         }
-    
-        if (!nodeFound && !event.shiftKey) {
-            this.selectedNodes.clear();
-        }
-    
-        this.isDragging = nodeFound;
     }
+    
+    
+    
+    
                                     
     private onMouseMove(event: MouseEvent) {
         if (!this.isDragging) return;
@@ -96,15 +110,13 @@ export class Scene {
             node.update(newX, newY);
         });
     }
+    
+    
                         
     private onMouseUp(event: MouseEvent) {
         // Stop dragging
         this.isDragging = false;
 
-        if (!event.shiftKey) {
-            // If Shift is not pressed, start a new selection
-            this.selectedNodes.clear();
-        }
     }
 
     private initControlMenuEvents() {
