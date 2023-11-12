@@ -127,9 +127,19 @@ export class Scene {
 
     }
 
+    private selectAllNodes() {
+        this.selectedNodes.clear();
+        this.nodes.forEach(node => {
+            if (node.getType() !== NodeType.pivot) {
+                this.selectedNodes.add(node);
+            }
+        })
+    }
+
     private initControlMenuEvents() {
         const checkBox = document.getElementById('edit-state') as HTMLInputElement;
         const button = document.getElementById('btn-input') as HTMLButtonElement;
+        const buttonSelectAll = document.getElementById('btn-select-all') as HTMLButtonElement;
         const textarea = document.getElementById('bezier-input') as HTMLTextAreaElement;
         const outputButton = document.getElementById('btn-output') as HTMLButtonElement;
         const outputParagraph = document.getElementById('output') as HTMLParagraphElement;
@@ -155,6 +165,10 @@ export class Scene {
                 alert('Invalid input format. Expected an array of arrays of numbers.');
                 console.error('Invalid JSON format:', error);
             }
+        });
+
+        buttonSelectAll.addEventListener('click', () => {
+            this.selectAllNodes();
         });
 
         outputButton.addEventListener('click', () => {
