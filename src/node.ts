@@ -3,6 +3,7 @@ export enum NodeType {
     regular,
     controlStart,
     controlEnd,
+    pivot
 }
 
 export class Node {
@@ -54,6 +55,14 @@ export class Node {
         switch (this.type) {
             case NodeType.regular:
                 ctx.fillStyle = "yellow";
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.rect(this.pivotX + this.x - 5, this.pivotY + this.y - 5, 10, 10);
+                ctx.fill();
+                ctx.stroke();        
+                break;
+            case NodeType.pivot:
+                ctx.fillStyle = "black";
                 ctx.lineWidth = 1;
                 ctx.beginPath();
                 ctx.rect(this.pivotX + this.x - 5, this.pivotY + this.y - 5, 10, 10);

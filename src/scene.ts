@@ -11,6 +11,7 @@ export class Scene {
 
     private isEditing = true;
 
+
     private nodes: Node[] = [
         new Node(10, 10, NodeType.regular, this.pivotX, this.pivotY),
         new Node(20, 10, NodeType.controlStart, this.pivotX, this.pivotY),
@@ -154,20 +155,24 @@ export class Scene {
             let currentSet: any = [];
             let previousType: NodeType = NodeType.regular 
             this.nodes.forEach((node, index) => {
-                
-                if (previousType === NodeType.regular && node.getType() === NodeType.regular) {
-                    currentSet.push(node.getCoords().x, node.getCoords().y);
-                    output.push(currentSet);
-                    currentSet = [];                   
-                } else {
-                    currentSet.push(node.getCoords().x, node.getCoords().y);
 
-                    if (node.getType() === NodeType.regular) {
+                if (!(node.getType() === NodeType.pivot)) {
+                    
+                    
+                    if ((previousType === NodeType.regular || previousType === NodeType.pivot) && node.getType() === NodeType.regular) {
+                        currentSet.push(node.getCoords().x, node.getCoords().y);
                         output.push(currentSet);
                         currentSet = [];                   
-    
+                    } else {
+                        currentSet.push(node.getCoords().x, node.getCoords().y);
+                        
+                        if (node.getType() === NodeType.regular) {
+                            output.push(currentSet);
+                            currentSet = [];                   
+                            
+                        }
                     }
-                }
+                } 
                 previousType = node.getType(); 
 
 
@@ -185,6 +190,7 @@ export class Scene {
     private processInput(inputValue: number[][]) {
         console.log('Validated input:', inputValue);
         this.nodes = [];
+        this.nodes.push(new Node(this.pivotX, this.pivotY, NodeType.pivot, 0, 0));
         inputValue.forEach((curve: number[]) => {
             if (curve.length === 6) {
                 this.nodes.push(new Node(curve[0], curve[1], NodeType.controlStart, this.pivotX, this.pivotY));
@@ -229,7 +235,7 @@ export class Scene {
         let previousType: NodeType = NodeType.regular 
         this.nodes.forEach((node, index) => {
             
-            if (previousType === NodeType.regular && node.getType() === NodeType.regular) {
+            if ((previousType === NodeType.regular || previousType === NodeType.pivot) && node.getType() === NodeType.regular) {
                 currentSet.push(node.getCoords().x, node.getCoords().y);
                 this.ctx.moveTo(this.pivotX + node.getCoords().x, this.pivotY + node.getCoords().y);
                 output.push(currentSet);
@@ -261,9 +267,9 @@ export class Scene {
         this.pivotX = x;
         this.pivotY = y;
         this.nodes.forEach((node: Node) => {
-            node.setPivot(this.pivotX, this.pivotY);
+            if (node.getType() === NodeType.pivot) node.update(this.pivotX, this.pivotY);
+            else node.setPivot(this.pivotX, this.pivotY);
         })
-
     }
 
 
