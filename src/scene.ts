@@ -20,6 +20,11 @@ export class Scene {
     private firstSelectedNode: Node | null = null;
 
 
+    private minCoords: Node[] = [];
+    private maxCoords: Node[] = [];
+
+
+
     private dragOffset: { x: number, y: number } = { x: 0, y: 0 };
 
     constructor(private pivotX = 0, private pivotY = 0) {
@@ -50,10 +55,10 @@ export class Scene {
         const mouseY = event.clientY;
         let nodeFound = false;
     
-        this.nodes.forEach(node => {
+        this.nodes.slice().reverse().forEach(node => {
             if (node.isPointInside(mouseX, mouseY)) {
                 nodeFound = true;
-    
+
                 if (event.shiftKey) {
                     // Toggle selection with Shift key
                     if (this.selectedNodes.has(node)) {
@@ -143,6 +148,12 @@ export class Scene {
         const textarea = document.getElementById('bezier-input') as HTMLTextAreaElement;
         const outputButton = document.getElementById('btn-output') as HTMLButtonElement;
         const outputParagraph = document.getElementById('output') as HTMLParagraphElement;
+        const minCoordsButton = document.getElementById('btn-min-coords') as HTMLButtonElement;
+        const outputMinParagraph = document.getElementById('output-min-coords') as HTMLParagraphElement;
+        const maxCoordsButton = document.getElementById('btn-max-coords') as HTMLButtonElement;
+        const outputMaxParagraph = document.getElementById('output-max-coords') as HTMLParagraphElement;
+        const buttonProduceModifiers = document.getElementById('btn-produce-modifiers') as HTMLButtonElement;
+        const outputProduceModifiers = document.getElementById('output-produce-modifiers') as HTMLParagraphElement;
 
         checkBox.checked = this.isEditing;
         checkBox.addEventListener('change', () => {
@@ -206,6 +217,99 @@ export class Scene {
  
         });
 
+
+        minCoordsButton.addEventListener('click', () => {
+            const [, ...minArray] = this.nodes;
+            this.minCoords = minArray;
+
+            let output:any = [];
+            let currentSet: any = [];
+            let previousType: NodeType = NodeType.regular 
+
+            this.minCoords.forEach((node, index) => {
+
+                if (!(node.getType() === NodeType.pivot)) {
+                    
+                    
+                    if ((previousType === NodeType.regular || previousType === NodeType.pivot) && node.getType() === NodeType.regular) {
+                        currentSet.push(node.getCoords().x, node.getCoords().y);
+                        output.push(currentSet);
+                        currentSet = [];                   
+                    } else {
+                        currentSet.push(node.getCoords().x, node.getCoords().y);
+                        
+                        if (node.getType() === NodeType.regular) {
+                            output.push(currentSet);
+                            currentSet = [];                   
+                            
+                        }
+                    }
+                } 
+                previousType = node.getType(); 
+
+
+                const formattedArrayString = '[' + output.map((subArray:any) => 
+                    '\n[' + subArray.join(', ') + ']'
+                ).join(',') + '\n]';  
+    
+                outputMinParagraph.textContent = formattedArrayString;
+            });
+
+        });
+
+
+        maxCoordsButton.addEventListener('click', () => {
+            const [, ...maxArray] = this.nodes;
+            this.maxCoords = maxArray;
+
+
+            let output:any = [];
+            let currentSet: any = [];
+            let previousType: NodeType = NodeType.regular 
+
+            this.maxCoords.forEach((node, index) => {
+
+                if (!(node.getType() === NodeType.pivot)) {
+                    
+                    
+                    if ((previousType === NodeType.regular || previousType === NodeType.pivot) && node.getType() === NodeType.regular) {
+                        currentSet.push(node.getCoords().x, node.getCoords().y);
+                        output.push(currentSet);
+                        currentSet = [];                   
+                    } else {
+                        currentSet.push(node.getCoords().x, node.getCoords().y);
+                        
+                        if (node.getType() === NodeType.regular) {
+                            output.push(currentSet);
+                            currentSet = [];                   
+                            
+                        }
+                    }
+                } 
+                previousType = node.getType(); 
+
+
+                const formattedArrayString = '[' + output.map((subArray:any) => 
+                    '\n[' + subArray.join(', ') + ']'
+                ).join(',') + '\n]';  
+    
+                outputMaxParagraph.textContent = formattedArrayString;
+            });
+        });
+
+
+
+
+        buttonProduceModifiers.addEventListener('click', () => {
+            outputProduceModifiers.textContent = this.produceModifiers(this.minCoords, this.maxCoords);
+
+        })
+
+    }
+
+    private produceModifiers(minCoords: Node[], maxCoords: Node[]): string {
+        if (minCoords.length === 0 || maxCoords.length === 0  || this.minCoords.length !== this.maxCoords.length)
+            return 'Invalid inputs';
     }
 
     private processInput(inputValue: number[][]) {
@@ -282,6 +386,9 @@ export class Scene {
             const isSelected = this.isNodeSelected(node);
             node.draw(this.ctx, isSelected, this.isEditing); 
         }
+        const isSelected = this.isNodeSelected(this.nodes[0]);
+        this.nodes[0].draw(this.ctx, isSelected, this.isEditing);
+        
     }
 
 
