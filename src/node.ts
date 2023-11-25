@@ -21,6 +21,10 @@ export class Node {
         return { x: this.x, y: this.y };
     }
 
+    getPivot(): { x: number, y: number } {
+        return { x: this.pivotX, y: this.pivotY };
+    }
+
     getType() : NodeType {
         return this.type;
     }

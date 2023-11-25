@@ -183,134 +183,108 @@ export class Scene {
         });
 
         outputButton.addEventListener('click', () => {
-            let output:any = [];
-            let currentSet: any = [];
-            let previousType: NodeType = NodeType.regular 
-            this.nodes.forEach((node, index) => {
-
-                if (!(node.getType() === NodeType.pivot)) {
-                    
-                    
-                    if ((previousType === NodeType.regular || previousType === NodeType.pivot) && node.getType() === NodeType.regular) {
-                        currentSet.push(node.getCoords().x, node.getCoords().y);
-                        output.push(currentSet);
-                        currentSet = [];                   
-                    } else {
-                        currentSet.push(node.getCoords().x, node.getCoords().y);
-                        
-                        if (node.getType() === NodeType.regular) {
-                            output.push(currentSet);
-                            currentSet = [];                   
-                            
-                        }
-                    }
-                } 
-                previousType = node.getType(); 
-
-
-                const formattedArrayString = '[' + output.map((subArray:any) => 
-                    '\n[' + subArray.join(', ') + ']'
-                ).join(',') + '\n]';  
-    
-                outputParagraph.textContent = formattedArrayString;
-            });
- 
+            outputParagraph.textContent = this.formatForOutput(this.nodes);
         });
-
 
         minCoordsButton.addEventListener('click', () => {
             const [, ...minArray] = this.nodes;
-            this.minCoords = minArray;
-
-            let output:any = [];
-            let currentSet: any = [];
-            let previousType: NodeType = NodeType.regular 
-
-            this.minCoords.forEach((node, index) => {
-
-                if (!(node.getType() === NodeType.pivot)) {
-                    
-                    
-                    if ((previousType === NodeType.regular || previousType === NodeType.pivot) && node.getType() === NodeType.regular) {
-                        currentSet.push(node.getCoords().x, node.getCoords().y);
-                        output.push(currentSet);
-                        currentSet = [];                   
-                    } else {
-                        currentSet.push(node.getCoords().x, node.getCoords().y);
-                        
-                        if (node.getType() === NodeType.regular) {
-                            output.push(currentSet);
-                            currentSet = [];                   
-                            
-                        }
-                    }
-                } 
-                previousType = node.getType(); 
-
-
-                const formattedArrayString = '[' + output.map((subArray:any) => 
-                    '\n[' + subArray.join(', ') + ']'
-                ).join(',') + '\n]';  
-    
-                outputMinParagraph.textContent = formattedArrayString;
-            });
-
+            this.minCoords = this.cloneNodeArray(minArray);
+            outputMinParagraph.textContent = this.formatForOutput(this.minCoords);
         });
-
 
         maxCoordsButton.addEventListener('click', () => {
             const [, ...maxArray] = this.nodes;
-            this.maxCoords = maxArray;
-
-
-            let output:any = [];
-            let currentSet: any = [];
-            let previousType: NodeType = NodeType.regular 
-
-            this.maxCoords.forEach((node, index) => {
-
-                if (!(node.getType() === NodeType.pivot)) {
-                    
-                    
-                    if ((previousType === NodeType.regular || previousType === NodeType.pivot) && node.getType() === NodeType.regular) {
-                        currentSet.push(node.getCoords().x, node.getCoords().y);
-                        output.push(currentSet);
-                        currentSet = [];                   
-                    } else {
-                        currentSet.push(node.getCoords().x, node.getCoords().y);
-                        
-                        if (node.getType() === NodeType.regular) {
-                            output.push(currentSet);
-                            currentSet = [];                   
-                            
-                        }
-                    }
-                } 
-                previousType = node.getType(); 
-
-
-                const formattedArrayString = '[' + output.map((subArray:any) => 
-                    '\n[' + subArray.join(', ') + ']'
-                ).join(',') + '\n]';  
-    
-                outputMaxParagraph.textContent = formattedArrayString;
-            });
+            this.maxCoords = this.cloneNodeArray(maxArray);
+            outputMaxParagraph.textContent = this.formatForOutput(this.maxCoords);
         });
-
-
-
 
         buttonProduceModifiers.addEventListener('click', () => {
             outputProduceModifiers.textContent = this.produceModifiers(this.minCoords, this.maxCoords);
-
         })
 
+    }
+
+    private cloneNodeArray(nodeArray: Node[]): Node[] {
+        return nodeArray.map(node => {
+            const coords = node.getCoords();
+            const pivot = node.getPivot();
+            // Create a new Node with the same properties
+            const clonedNode = new Node(coords.x, coords.y, node.getType(), pivot.x, pivot.y);
+            // Assuming dragOffset should also be copied
+            clonedNode.dragOffset = { ...node.dragOffset };
+            return clonedNode;
+        });
+    }
+
+    private formatForOutput(nodeArr: Node[]) {
+        let output:any = [];
+        let currentSet: any = [];
+        let previousType: NodeType = NodeType.regular 
+
+        nodeArr.forEach((node, index) => {
+
+            if (!(node.getType() === NodeType.pivot)) {
+                
+                
+                if ((previousType === NodeType.regular || previousType === NodeType.pivot) && node.getType() === NodeType.regular) {
+                    currentSet.push(node.getCoords().x, node.getCoords().y);
+                    output.push(currentSet);
+                    currentSet = [];                   
+                } else {
+                    currentSet.push(node.getCoords().x, node.getCoords().y);
+                    
+                    if (node.getType() === NodeType.regular) {
+                        output.push(currentSet);
+                        currentSet = [];                   
+                        
+                    }
+                }
+            } 
+            previousType = node.getType(); 
+
+        });
+
+        const formattedArrayString = '[' + output.map((subArray:any) => 
+            '\n[' + subArray.join(', ') + ']'
+        ).join(',') + '\n]';  
+
+        return formattedArrayString;
     }
 
     private produceModifiers(minCoords: Node[], maxCoords: Node[]): string {
         if (minCoords.length === 0 || maxCoords.length === 0  || this.minCoords.length !== this.maxCoords.length)
             return 'Invalid inputs';
+
+        console.log(minCoords);
+        console.log(maxCoords);
+        const averageNodeArray = this.calculateAverageNodeArray(minCoords, maxCoords);
+        return this.formatForOutput(averageNodeArray);
     }
+
+
+    private calculateAverageNodeArray(array1: Node[], array2: Node[]) {
+        if (array1.length !== array2.length) {
+            throw new Error('Arrays must be of the same length');
+        }
+    
+        return array1.map((node1, index) => {
+            const node2 = array2[index];
+            
+            // Calculate average values for coordinates and pivot
+            const avgX = (node1.getCoords().x + node2.getCoords().x) / 2;
+            const avgY = (node1.getCoords().y + node2.getCoords().y) / 2;
+            const avgPivotX = (node1.getPivot().x + node2.getPivot().x) / 2;
+            const avgPivotY = (node1.getPivot().y + node2.getPivot().y) / 2;
+    
+            // Create a new node with the averaged values, and default dragOffset
+            const newNode = new Node(avgX, avgY, node1.getType(), avgPivotX, avgPivotY);
+    
+            return newNode;
+        });
+    }
+
+
+    
 
     private processInput(inputValue: number[][]) {
         console.log('Validated input:', inputValue);
@@ -345,13 +319,11 @@ export class Scene {
 
     public draw(): void {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-
-
-
-
         this.ctx.fillStyle = "#ffceb4";
         this.ctx.lineWidth = 2;
         this.ctx.strokeStyle = 'black';
+
+
         this.ctx.beginPath();
         this.ctx.moveTo(this.nodes[0].getCoords().x, this.nodes[0].getCoords().y);
 
