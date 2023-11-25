@@ -154,13 +154,16 @@ export class Scene {
         const outputMaxParagraph = document.getElementById('output-max-coords') as HTMLParagraphElement;
         const buttonProduceModifiers = document.getElementById('btn-produce-modifiers') as HTMLButtonElement;
         const outputProduceModifiers = document.getElementById('output-produce-modifiers') as HTMLParagraphElement;
+        const imageTray = document.getElementById('image-tray') as HTMLDivElement;
 
         checkBox.checked = this.isEditing;
         checkBox.addEventListener('change', () => {
             if (checkBox.checked) {
                 this.isEditing = true;
+                imageTray.style.zIndex = '0';
             } else {
                 this.isEditing = false;
+                imageTray.style.zIndex = '2';
             }
         });
         button.addEventListener('click', () => {
@@ -379,9 +382,9 @@ coords: ${JSON.stringify(modifierArr, null, 4).replace(/(\w+):/g, '    $1: ')}`;
 
     public draw(): void {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        this.ctx.fillStyle = "#ffceb4";
+        this.ctx.fillStyle = this.isEditing ? "#ffceb480": "#ffceb4";
         this.ctx.lineWidth = 2;
-        this.ctx.strokeStyle = 'black';
+        this.ctx.strokeStyle = this.isEditing ? '#00000080': '#000000';
 
 
         this.ctx.beginPath();

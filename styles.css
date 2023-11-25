@@ -3,8 +3,19 @@ body {
 }
 
 #canvas {
-    background-color: #ddd;
+    z-index: 1;
 }
+
+#image-tray {
+    position: fixed;
+    top: 0px;
+    left: 0px;
+    background-color: #33333330;
+    height: 100vh;
+    width: 100vw;
+    z-index: 0;
+}
+
 
 p, label, button, h1, h2, h3 {
     margin-block: 0;
@@ -28,6 +39,7 @@ p, label, button, h1, h2, h3 {
         flex-direction: column;
         background-color: #eee;
         border: #999 1px solid;
+        z-index: 10;
 
         .panel-title {
             padding: 20px;
