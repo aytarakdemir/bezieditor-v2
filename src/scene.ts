@@ -216,7 +216,8 @@ export class Scene {
         });
     }
 
-    private formatForOutput(nodeArr: Node[]) {
+    private formatForOutput(nodeArr: Node[]): string {
+        if (nodeArr.length === 0) return 'Invalid input'
         let output:any = [];
         let currentSet: any = [];
         let previousType: NodeType = NodeType.regular 
@@ -248,17 +249,76 @@ export class Scene {
             '\n[' + subArray.join(', ') + ']'
         ).join(',') + '\n]';  
 
-        return formattedArrayString;
+        return `pivot: {x: ${nodeArr[0].getPivot().x}, y: ${nodeArr[0].getPivot().y}}\ncoords:${formattedArrayString}`;
     }
 
     private produceModifiers(minCoords: Node[], maxCoords: Node[]): string {
         if (minCoords.length === 0 || maxCoords.length === 0  || this.minCoords.length !== this.maxCoords.length)
             return 'Invalid inputs';
 
-        console.log(minCoords);
-        console.log(maxCoords);
         const averageNodeArray = this.calculateAverageNodeArray(minCoords, maxCoords);
-        return this.formatForOutput(averageNodeArray);
+        console.log(averageNodeArray);
+        console.log(maxCoords);
+
+        const modifierArr: {
+            curveIndex: number,
+            coordinateIndex: number,
+            strength: number, 
+        }[] = [];
+
+        let curveIndex : number = 0;
+        let coordinateIndex : number = 0;
+
+        let previousType = NodeType.regular;
+
+        this.maxCoords.forEach((node: Node, index) => {
+            if (node.getType() === NodeType.regular) {
+                if (previousType === NodeType.regular) {
+                    coordinateIndex = 0;
+                } else {
+                    coordinateIndex = 4;
+                }
+            } else if (node.getType() === NodeType.controlStart) {
+                coordinateIndex = 0;
+            } else {
+                coordinateIndex = 2;
+            }
+
+            if (node.getCoords().x - averageNodeArray[index].getCoords().x !== 0 || 
+                node.getCoords().y - averageNodeArray[index].getCoords().y !== 0) {
+                let nodeInfoX = {
+                    curveIndex: curveIndex,
+                    coordinateIndex: coordinateIndex,
+                    strength: node.getCoords().x - averageNodeArray[index].getCoords().x, 
+                } 
+                modifierArr.push(nodeInfoX);
+
+                let nodeInfoY = {
+                    curveIndex: curveIndex,
+                    coordinateIndex: coordinateIndex + 1,
+                    strength: node.getCoords().y - averageNodeArray[index].getCoords().y, 
+                } 
+                modifierArr.push(nodeInfoY);
+            }
+
+
+            if (node.getType() === NodeType.regular) {
+                curveIndex += 1;
+            }
+            previousType = node.getType();
+        })
+
+        console.log('modifierArr', modifierArr);
+
+        const pivotXstrength = maxCoords[0].getPivot().x - averageNodeArray[0].getPivot().x;
+        const pivotYstrength = maxCoords[0].getPivot().y - averageNodeArray[0].getPivot().y;
+
+        return `${this.formatForOutput(averageNodeArray)}\n\n----\n\n
+pivotCoords: {
+    xStrength: ${pivotXstrength},
+    yStrength: ${pivotYstrength}
+},
+coords: ${JSON.stringify(modifierArr, null, 4).replace(/(\w+):/g, '    $1: ')}`;
     }
 
 
