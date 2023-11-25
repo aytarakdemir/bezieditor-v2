@@ -22,7 +22,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
 
     // Add keydown event listener to document
     document.addEventListener('keydown', (e) => {
-        if (e.key === 'Delete' || e.key === 'Backspace') {
+        if (e.key === 'Delete') {
             // Delete all images
             removeAllImages();
         }
